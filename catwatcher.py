@@ -13,6 +13,7 @@ min_upload_seconds = 3
 min_motion_frames = 3
 images_path = "C:\\temp\\images\\"
 disable_path = "C:\\temp\\disable_watch"
+max_pictures = 30
 
 # construct the argument parser and parse the arguments
 
@@ -84,6 +85,11 @@ while True:
                 cv2.imwrite(save_path, frame)
                 last_uploaded = timestamp
                 print("Image saved to " + save_path)
+                list_of_files = os.listdir(images_path)
+                full_path = [images_path + "{0}".format(x) for x in list_of_files]
+                if len([name for name in list_of_files]) > max_pictures:
+                    oldest_file = min(full_path, key=os.path.getctime)
+                    os.remove(oldest_file)
     else:
         motion_counter = 0
         
