@@ -17,23 +17,31 @@ max_pictures = 3000
 
 # construct the argument parser and parse the arguments
 
-vs = VideoStream(src=0).start()
-time.sleep(2.0)
+vs = None
 
 # initialize the first frame in the video stream
-avgFrame = None
-last_uploaded = datetime.datetime.now()
-motion_counter = 0
 
-print("Starting the watch")
 
 # loop over the frames of the video
 while True:
-    time.sleep(0.1)
     if os.path.exists(disable_path):
+        if vs:
+            vs.stop()
+            cv2.destroyAllWindows()
+            vs = None
         print("Disabled, sleeping for 5 seconds")
         time.sleep(5)
         continue
+
+    time.sleep(0.1)
+    if not vs:
+        print("Starting the watch")
+        vs = VideoStream(src=0).start()
+        time.sleep(2.0)
+        avgFrame = None
+        last_uploaded = datetime.datetime.now()
+        motion_counter = 0
+
     # grab the current frame and initialize the occupied/unoccupied
     # text
     frame = vs.read()
