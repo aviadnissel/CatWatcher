@@ -3,8 +3,7 @@ import glob
 import shutil
 from flask import Flask, redirect, render_template
 
-disable_path = "/home/pi/disable_watch"
-image_path = "/home/pi/images/"
+from catwatcher import disable_path, images_path
 
 app = Flask(__name__)
 latest_copied_image = ''
@@ -21,7 +20,7 @@ def main_page():
         current = "enabled"
         change_to = "disabled"
         change_to_number = 0
-    image_list = glob.glob(image_path + "*orig.jpg")
+    image_list = glob.glob(images_path + "*orig.jpg")
     if image_list:
         latest_image = max(image_list, key=os.path.getctime)
         if latest_copied_image != latest_image:
