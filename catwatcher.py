@@ -8,12 +8,12 @@ import cv2
 
 min_area = 500
 delta_thresh = 5
-show_video = True
-min_upload_seconds = 3
-min_motion_frames = 3
-images_path = "C:\\temp\\images\\"
-disable_path = "C:\\temp\\disable_watch"
-max_pictures = 30
+show_video = False
+min_upload_seconds = 1
+min_motion_frames = 2
+images_path = "/home/pi/images/"
+disable_path = "/home/pi/disable_watch"
+max_pictures = 3000
 
 # construct the argument parser and parse the arguments
 
@@ -25,9 +25,15 @@ avgFrame = None
 last_uploaded = datetime.datetime.now()
 motion_counter = 0
 
+print("Starting the watch")
+
 # loop over the frames of the video
 while True:
-    time.sleep(0.05)
+    time.sleep(0.1)
+    if os.path.exists(disable_path):
+        print("Disabled, sleeping for 5 seconds")
+        time.sleep(5)
+        continue
     # grab the current frame and initialize the occupied/unoccupied
     # text
     frame = vs.read()
@@ -59,7 +65,10 @@ while True:
         cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     
+    biggest_change = None
+    biggest_change_size = 0
     # loop over the contours
+    marked_frame = frame.copy()
     for c in cnts:
         # if the contour is too small, ignore it
         if cv2.contourArea(c) < min_area:
@@ -68,21 +77,24 @@ while True:
         # compute the bounding box for the contour, draw it on the frame,
         # and update the text
         (x, y, w, h) = cv2.boundingRect(c)
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        if w * h > biggest_change_size:
+            biggest_change = frame[y:y+h, x:x+w]
+            biggest_change_size = w * h
+        cv2.rectangle(marked_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
         text = "Occupied"
     timestamp = datetime.datetime.now()
     # draw the text and timestamp on the frame
-    cv2.putText(frame, "Room Status: {}".format(text), (10, 20),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-    cv2.putText(frame, timestamp.strftime("%A %d %B %Y %I:%M:%S%p"),
+    cv2.putText(marked_frame, timestamp.strftime("%A %d %B %Y %I:%M:%S%p"),
                 (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
 
-    if text == "Occupied" and not os.path.exists(disable_path):
+    if text == "Occupied":
         if (timestamp - last_uploaded).seconds >= min_upload_seconds:
             motion_counter += 1
             if motion_counter >= min_motion_frames:
-                save_path = images_path + timestamp.strftime("%Y%m%d.%H%M%S") + ".jpg"
-                cv2.imwrite(save_path, frame)
+                save_path = images_path + timestamp.strftime("%Y%m%d.%H%M%S")
+#                cv2.imwrite(save_path + ".marked.jpg", marked_frame)
+                cv2.imwrite(save_path + ".orig.jpg", frame)
+                cv2.imwrite(save_path + ".slice.jpg", biggest_change)
                 last_uploaded = timestamp
                 print("Image saved to " + save_path)
                 list_of_files = os.listdir(images_path)
@@ -96,7 +108,7 @@ while True:
     if show_video:
         # show the frame and record if the user presses a key
     
-        cv2.imshow("Security Feed", frame)
+        cv2.imshow("Security Feed", marked_frame)
         cv2.imshow("Thresh", thresh)
         cv2.imshow("Frame Delta", frameDelta)
 

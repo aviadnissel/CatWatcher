@@ -1,7 +1,7 @@
 import os
-from flask import Flask
+from flask import Flask, redirect
 
-disable_path = "C:\\temp\\disable_watch"
+disable_path = "/home/pi/disable_watch"
 link_template = "<a href=/{change_number}>{change_to}</a>"
 app = Flask(__name__)
 
@@ -19,6 +19,6 @@ def change(change_number):
             os.remove(disable_path)
     else:
         open(disable_path, "wb")
-    return main_page()
+    return redirect("/")
 
 app.run("0.0.0.0", 1337)
