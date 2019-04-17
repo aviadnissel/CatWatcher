@@ -51,14 +51,22 @@ class CatWatcher:
         cnts = imutils.grab_contours(cnts)
         return cnts
 
+    def stop_vs(self):
+        self.vs.stop()
+        cv2.destroyAllWindows()
+        self.vs = None
+
+    def create_gray(self, frame):
+        frame = imutils.resize(frame, width=500)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (21, 21), 0)
+        return gray
+ 
     def run(self):
-        # loop over the frames of the video
         while True:
-            if self.is_enabled():
+            if not self.is_enabled():
                 if self.vs:
-                    self.vs.stop()
-                    cv2.destroyAllWindows()
-                    self.vs = None
+                    self.stop_vs()
                 print("Disabled, sleeping for 5 seconds")
                 time.sleep(5)
                 continue
@@ -72,37 +80,26 @@ class CatWatcher:
                 self.last_uploaded = datetime.datetime.now()
                 motion_counter = 0
 
-            # grab the current frame and initialize the occupied/unoccupied
-            # text
             frame = self.vs.read()
             is_occupied = False
+            gray = self.create_gray(frame)
 
-            # resize the frame, convert it to grayscale, and blur it
-            frame = imutils.resize(frame, width=500)
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gray = cv2.GaussianBlur(gray, (21, 21), 0)
-
-            # if the first frame is None, initialize it
             if avg_frame is None:
                 avg_frame = gray.copy().astype("float")
+                self.save_image(frame)
                 continue
-            cv2.accumulateWeighted(gray, avg_frame, 0.5)
+            cv2.accumulateWeighted(gray, avg_frame, 0.7)
             cnts = self.get_contours(gray, avg_frame)
 
             marked_frame = frame.copy()
-            # loop over the contours
             for c in cnts:
-                # if the contour is too small, ignore it
                 if cv2.contourArea(c) < min_area:
                     continue
 
-                # compute the bounding box for the contour, draw it on the frame,
-                # and update the text
                 (x, y, w, h) = cv2.boundingRect(c)
                 cv2.rectangle(marked_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 is_occupied = True
             timestamp = datetime.datetime.now()
-            # draw the text and timestamp on the frame
             cv2.putText(marked_frame, timestamp.strftime("%A %d %B %Y %I:%M:%S%p"),
                         (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
 
@@ -115,20 +112,15 @@ class CatWatcher:
                 motion_counter = 0
 
             if show_video:
-                # show the frame and record if the user presses a key
-
                 cv2.imshow("Security Feed", marked_frame)
                 cv2.imshow("Thresh", thresh)
                 cv2.imshow("Frame Delta", frameDelta)
 
             key = cv2.waitKey(1) & 0xFF
-            # if the `q` key is pressed, break from the lop
             if key == ord("q"):
                 break
 
-        # cleanup the camera and close any open windows
-        self.vs.stop()
-        cv2.destroyAllWindows()
+        self.stop_vs()
 
 if __name__ == '__main__':
     catwatcher = CatWatcher()

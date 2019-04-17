@@ -3,10 +3,14 @@ import glob
 import shutil
 from flask import Flask, redirect, render_template
 
+from analyzer import CatAnalyzer 
 from catwatcher import disable_path, images_path
 
 app = Flask(__name__)
 latest_copied_image = ''
+
+analyzer = CatAnalyzer()
+analyzer.load_model('cat_model.h5')
 
 @app.route('/')
 def main_page():
@@ -29,9 +33,11 @@ def main_page():
                 os.remove(image)
             shutil.copy(latest_image, "static/")
             latest_copied_image = latest_image
+        analyze_result = analyzer.analyze_picture(latest_copied_image)
     return render_template('main_page.html', change_to_number=change_to_number,
                            change_to=change_to, current=current,
-                           image=os.path.basename(latest_copied_image))
+                           image=os.path.basename(latest_copied_image),
+                           analyze_result=analyze_result)
 
 @app.route('/img/<path:filename>') 
 def send_file(filename): 
