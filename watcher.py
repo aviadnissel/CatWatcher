@@ -22,7 +22,7 @@ vs = None
 
 # initialize the first frame in the video stream
 
-class CatWatcher:
+class Watcher:
     def __init__(self):
         self.vs = None
         self.last_played = datetime.datetime.now()
