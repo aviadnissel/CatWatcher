@@ -134,5 +134,5 @@ class Watcher:
         self.stop_vs()
 
 if __name__ == '__main__':
-    catwatcher = CatWatcher()
+    catwatcher = Watcher()
     catwatcher.run()
