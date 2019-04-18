@@ -2,18 +2,14 @@ import os
 import glob
 import shutil
 import datetime
+import pickle
 from flask import Flask, redirect, render_template
 
-#from analyzer import CatAnalyzer
 from watcher import disable_path, images_path
 from cat_alert import CatAlert
 
 app = Flask(__name__)
 latest_copied_image = ''
-
-analyzer = None
-#analyzer = CatAnalyzer()
-#analyzer.load_model('missy_or_bawf.h5')
 
 @app.route('/')
 def main_page():
@@ -28,23 +24,24 @@ def main_page():
         current = "enabled"
         change_to = "disabled"
         change_to_number = 0
-    image_list = glob.glob(images_path + "*orig.jpg")
+    image_list = glob.glob(images_path + "*.jpg")
+    analyzed = [-1, -1, -1]
     if image_list:
         latest_image = max(image_list, key=os.path.getctime)
         if latest_copied_image != latest_image:
-            old_images = glob.glob("static/*orig.jpg")
+            old_images = glob.glob("static/*.jpg")
             for image in old_images:
                 os.remove(image)
             shutil.copy(latest_image, "static/")
             latest_copied_image = latest_image
         max_result = -1
-        if analyzer:
-            analyze_result = analyzer.analyze_picture(latest_copied_image)
-            max_result = [x for x in analyze_result].index(max(analyze_result))
+        latest_analyzed = latest_image.replace(".jpg", ".anlz")
+        if os.path.exists(latest_analyzed):
+            analyzed = [round(x, 2) for x in pickle.load(open(latest_analyzed, "rb"))]
     return render_template('main_page.html', change_to_number=change_to_number,
                            change_to=change_to, current=current,
                            image=os.path.basename(latest_copied_image),
-                           analyze_result=max_result)
+                           bawf=analyzed[0], missy=analyzed[1], empty=analyzed[2])
 
 @app.route('/img/<path:filename>') 
 def send_file(filename): 

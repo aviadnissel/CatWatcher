@@ -4,20 +4,17 @@ import datetime
 import imutils
 import time
 import os
+import glob
 import cv2
 
 min_area = 500
 delta_thresh = 5
-show_video = False
 min_upload_seconds = 1
 min_motion_frames = 2
 images_path = "/home/pi/images/"
 disable_path = "/home/pi/disable_watch"
 max_pictures = 3000
 
-# construct the argument parser and parse the arguments
-
-vs = None
 
 # initialize the first frame in the video stream
 
@@ -30,15 +27,17 @@ class Watcher:
 
     def save_image(self, frame):
         timestamp = datetime.datetime.now()
-        save_path = images_path + timestamp.strftime("%Y%m%d.%H%M%S")
-        cv2.imwrite(save_path + ".orig.jpg", frame)
+        save_path = images_path + timestamp.strftime("%Y%m%d.%H%M%S") + ".jpg"
+        cv2.imwrite(save_path, frame)
         self.last_uploaded = timestamp
         print("Image saved to " + save_path)
-        list_of_files = os.listdir(images_path)
+        list_of_files = glob.glob(images_path + "*.jpg")
         full_path = [images_path + "{0}".format(x) for x in list_of_files]
         if len([name for name in list_of_files]) > max_pictures:
             oldest_file = min(full_path, key=os.path.getctime)
             os.remove(oldest_file)
+            if os.path.exists(oldest_file.replace(".jpg", ".anlz")):
+                os.remove(oldest_file.replace(".jpg", ".anlz"))
 
     def get_contours(self, gray, avg_frame):
         frameDelta = cv2.absdiff(gray, cv2.convertScaleAbs(avg_frame))
@@ -91,17 +90,11 @@ class Watcher:
             cv2.accumulateWeighted(gray, avg_frame, 0.7)
             cnts = self.get_contours(gray, avg_frame)
 
-            marked_frame = frame.copy()
             for c in cnts:
                 if cv2.contourArea(c) < min_area:
                     continue
-
-                (x, y, w, h) = cv2.boundingRect(c)
-                cv2.rectangle(marked_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 is_occupied = True
             timestamp = datetime.datetime.now()
-            cv2.putText(marked_frame, timestamp.strftime("%A %d %B %Y %I:%M:%S%p"),
-                        (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
 
             if is_occupied:
                 if (timestamp - self.last_uploaded).seconds >= min_upload_seconds:
@@ -110,16 +103,6 @@ class Watcher:
                         self.save_image(frame)
             else:
                 motion_counter = 0
-
-            if show_video:
-                cv2.imshow("Security Feed", marked_frame)
-                cv2.imshow("Thresh", thresh)
-                cv2.imshow("Frame Delta", frameDelta)
-
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord("q"):
-                break
-
         self.stop_vs()
 
 if __name__ == '__main__':

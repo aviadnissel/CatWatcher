@@ -2,6 +2,7 @@ import glob
 import os
 import time
 import datetime
+import pickle
 
 from watcher import images_path
 
@@ -31,14 +32,20 @@ class CatAlert:
         while True:
             print("Checking for bad cats...")
             time.sleep(1)
-            image_list = glob.glob(images_path + "*orig.jpg")
+            image_list = glob.glob(images_path + "*.jpg")
             latest_image = None
             if image_list:
                 latest_image = max(image_list, key=os.path.getctime)
             if not latest_image:
                 continue
+            analyze_file = latest_image.replace(".jpg", ".anlz")
+            if os.path.exists(analyze_file):
+                continue
             analyze_result = self.analyzer.analyze_picture(latest_image)
-            if analyze_result[0] > 0.5:
+            print(analyze_result)
+            with open(analyze_file, "wb") as f:
+                pickle.dump(analyze_result.tolist(), f)
+            if analyze_result[0] > 0.5 and analyze_result[1] < 0.5 and analyze_result[2] < 0.5:
                 print("Found a bad cat:", latest_image, "Result", analyze_result)
                 self.play_ksht()
 
