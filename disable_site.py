@@ -9,12 +9,14 @@ from catwatcher import disable_path, images_path
 app = Flask(__name__)
 latest_copied_image = ''
 
+analyzer = None
 analyzer = CatAnalyzer()
-analyzer.load_model('cat_model.h5')
+analyzer.load_model('missy_or_bawf.h5')
 
 @app.route('/')
 def main_page():
     global latest_copied_image
+    analyze_result = None
     disable = os.path.exists(disable_path)
     if disable:
         current = "disabled"
@@ -33,11 +35,13 @@ def main_page():
                 os.remove(image)
             shutil.copy(latest_image, "static/")
             latest_copied_image = latest_image
-        analyze_result = analyzer.analyze_picture(latest_copied_image)
+        if analyzer:
+            analyze_result = analyzer.analyze_picture(latest_copied_image)
+            max_result = [x for x in analyze_result].index(max(analyze_result))
     return render_template('main_page.html', change_to_number=change_to_number,
                            change_to=change_to, current=current,
                            image=os.path.basename(latest_copied_image),
-                           analyze_result=analyze_result)
+                           analyze_result=max_result)
 
 @app.route('/img/<path:filename>') 
 def send_file(filename): 

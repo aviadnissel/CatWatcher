@@ -14,6 +14,7 @@ min_motion_frames = 2
 images_path = "/home/pi/images/"
 disable_path = "/home/pi/disable_watch"
 max_pictures = 3000
+ksht_delay = 10
 
 # construct the argument parser and parse the arguments
 
@@ -24,6 +25,7 @@ vs = None
 class CatWatcher:
     def __init__(self):
         self.vs = None
+        self.last_played = datetime.datetime.now()
 
     def is_enabled(self):
         return not os.path.exists(disable_path)
@@ -61,6 +63,14 @@ class CatWatcher:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
         return gray
+
+    def play_ksht(self):
+        print("maybe playing ksht")
+        now = datetime.datetime.now()
+        if (now - self.last_played).seconds > ksht_delay:
+            print("playing ksht")
+            os.system("ffplay -autoexit -nodisp ksht_aviad.mp3")
+            self.last_played = now
  
     def run(self):
         while True:
@@ -108,6 +118,7 @@ class CatWatcher:
                     motion_counter += 1
                     if motion_counter >= min_motion_frames:
                         self.save_image(frame)
+                        self.play_ksht()
             else:
                 motion_counter = 0
 
