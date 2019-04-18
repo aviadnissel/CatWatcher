@@ -1,17 +1,19 @@
 import os
 import glob
 import shutil
+import datetime
 from flask import Flask, redirect, render_template
 
-from analyzer import CatAnalyzer 
+#from analyzer import CatAnalyzer
 from watcher import disable_path, images_path
+from cat_alert import CatAlert
 
 app = Flask(__name__)
 latest_copied_image = ''
 
 analyzer = None
-analyzer = CatAnalyzer()
-analyzer.load_model('missy_or_bawf.h5')
+#analyzer = CatAnalyzer()
+#analyzer.load_model('missy_or_bawf.h5')
 
 @app.route('/')
 def main_page():
@@ -35,6 +37,7 @@ def main_page():
                 os.remove(image)
             shutil.copy(latest_image, "static/")
             latest_copied_image = latest_image
+        max_result = -1
         if analyzer:
             analyze_result = analyzer.analyze_picture(latest_copied_image)
             max_result = [x for x in analyze_result].index(max(analyze_result))
@@ -58,6 +61,9 @@ def change(change_number):
 
 @app.route("/ksht")
 def play_ksht():
+    alert = CatAlert(False)
+    alert.last_played = datetime.datetime(1970, 1, 1, 2, 0, 0)
+    alert.play_ksht()
     return redirect("/")
 
 app.run("0.0.0.0", 1337, threaded=True)
