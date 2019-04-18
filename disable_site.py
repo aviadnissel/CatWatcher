@@ -4,7 +4,7 @@ import shutil
 from flask import Flask, redirect, render_template
 
 from analyzer import CatAnalyzer 
-from catwatcher import disable_path, images_path
+from watcher import disable_path, images_path
 
 app = Flask(__name__)
 latest_copied_image = ''
@@ -54,6 +54,10 @@ def change(change_number):
             os.remove(disable_path)
     else:
         open(disable_path, "wb")
+    return redirect("/")
+
+@app.route("/ksht")
+def play_ksht():
     return redirect("/")
 
 app.run("0.0.0.0", 1337, threaded=True)
