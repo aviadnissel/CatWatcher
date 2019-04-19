@@ -73,7 +73,7 @@ class Watcher:
             time.sleep(0.1)
             if not self.vs:
                 print("Starting the watch")
-                self.vs = VideoStream(src=0).start()
+                self.vs = VideoStream(-1).start()
                 time.sleep(2.0)
                 avg_frame = None
                 self.last_uploaded = datetime.datetime.now()

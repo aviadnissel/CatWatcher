@@ -12,7 +12,6 @@ alert_delay = 10
 email = """From: bawfalert@gmail.com
 Subject: BAWF IS HERE!!!!
 
-!!!!!!
 """
 class CatAlert:
     def __init__(self, import_analyzer=True):
@@ -29,12 +28,12 @@ class CatAlert:
         os.system("ffplay -autoexit -nodisp ksht_aviad.mp3")
         self.last_played = datetime.datetime.now()
 
-    def send_email(self):
+    def send_email(self, img):
         try:
             server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
             server.ehlo()
             server.login("bawfalert", self.gmail_password)
-            server.sendmail("bawfalert@gmail.com", ["aviadnissel@gmail.com", "mirka.cerena@gmail.com"], email)
+            server.sendmail("bawfalert@gmail.com", ["aviadnissel@gmail.com", "mirka.cerena@gmail.com"], email + img)
             server.close()
             print("email sent!")
         except Exception as e:
@@ -45,7 +44,7 @@ class CatAlert:
             print("Analyzer not loaded, please create instance again with import_analyzer=True")
             return
         while True:
-            print("Checking for bad cats...")
+            #print("Checking for bad cats...")
             time.sleep(1)
             image_list = glob.glob(images_path + "*.jpg")
             latest_image = None
@@ -57,15 +56,16 @@ class CatAlert:
             if os.path.exists(analyze_file):
                 continue
             analyze_result = self.analyzer.analyze_picture(latest_image)
-            print(analyze_result)
+            print(latest_image, analyze_result)
             with open(analyze_file, "wb") as f:
                 pickle.dump(analyze_result.tolist(), f)
-            if analyze_result[0] > 0.5 and analyze_result[1] < 0.5 and analyze_result[2] < 0.5:
+            #if analyze_result[0] > 0.1:
+            if 1 == 1:
                 print("Found a bad cat:", latest_image, "Result", analyze_result)
                 now = datetime.datetime.now()
                 if (now - self.last_played).seconds > alert_delay:
                     self.play_ksht()
-                    self.send_email()
+                    self.send_email(latest_image)
 
 if __name__ == '__main__':
     alert = CatAlert()

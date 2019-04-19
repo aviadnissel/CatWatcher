@@ -41,7 +41,7 @@ def main_page():
     return render_template('main_page.html', change_to_number=change_to_number,
                            change_to=change_to, current=current,
                            image=os.path.basename(latest_copied_image),
-                           bawf=analyzed[0], missy=analyzed[1], empty=analyzed[2])
+                           bawf=analyzed[0], missy=analyzed[2], empty=analyzed[1])
 
 @app.route('/img/<path:filename>') 
 def send_file(filename): 
